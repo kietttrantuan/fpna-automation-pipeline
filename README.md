@@ -44,6 +44,26 @@ Price/volume bridge on revenue: **volume effect -393M**, **price effect -23M**. 
 
 Store-level: ST-01 (-386M), ST-11 (-122M) and ST-09 (-80M) carry most of the miss; ST-06 (+75M) and ST-03 (+49M) beat budget.
 
+## Power BI
+
+The report reads the same parquet warehouse the Python layer writes. That is what makes the two independently verifiable rather than separately trusted: every figure below reconciles to `analysis.py` to the dong.
+
+![Power BI report](assets/powerbi-report.png)
+
+EBIT is a DAX measure computed over the fact table, not a stored column:
+
+```dax
+EBIT Actual =
+    CALCULATE([Actual], fact_pnl[pnl_group] = "Revenue")
+  - CALCULATE([Actual], fact_pnl[pnl_group] IN {"COGS","Store Opex","G&A","D&A","UNMAPPED"})
+```
+
+The model is a star schema rather than a flat extract — store names, regions and P&L groups resolve through the dimensions:
+
+![Data model](assets/powerbi-model.png)
+
+Two details that matter more than they look. `dim_account` carries a `group_order` column so the P&L reads Revenue -> COGS -> opex -> below EBIT instead of alphabetically. And every account in the fact table has a row in the dimension: accounts missing from the chart of accounts are written in as explicit `UNMAPPED` rows, so the report shows a labelled line rather than the unattributed blank row that a broken key produces.
+
 ## Data quality
 
 Six tests run against the warehouse on every pipeline execution, all passing:
@@ -102,8 +122,10 @@ analysis.py               P&L, variance by store, price/volume bridge
 build_payload.py          Computes every figure -> variance_payload.json
 validate_commentary.py    Hallucination guardrail for AI commentary
 commentary.txt            AI-generated commentary (validated)
+fpna_report.pbix          Power BI report built on the warehouse
 data/                     Source files
 warehouse/                Generated parquet warehouse
+assets/                   Report screenshots
 ```
 
 ## Running it
