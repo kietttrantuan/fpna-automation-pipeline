@@ -144,6 +144,42 @@ fact_pnl = pd.concat([fact_actual, fact_budget], ignore_index=True)
 # ---------------------------------------------------------------------------
 dim_account = coa[["account", "pnl_group", "sub_group", "pnl_order"]].drop_duplicates()
 
+# Tài khoản có trong GL nhưng thiếu trong COA vẫn phải tồn tại trong
+# dim_account — cùng lý do với HQ/UNASSIGNED ở dim_costcenter bên dưới:
+# thiếu khóa thì Power BI hiện một dòng TRỐNG thay vì nhãn UNMAPPED. Số
+# vẫn đúng nhưng người đọc báo cáo không biết dòng đó là gì. Chúng giữ
+# nguyên pnl_group = "UNMAPPED", không tự ý gán vào nhóm P&L thật.
+missing_accounts = sorted(set(fact_pnl["account"]) - set(dim_account["account"]))
+if missing_accounts:
+    next_order = int(dim_account["pnl_order"].max()) + 1
+    dim_account = pd.concat(
+        [
+            dim_account,
+            pd.DataFrame({
+                "account": missing_accounts,
+                "pnl_group": "UNMAPPED",
+                "sub_group": missing_accounts,
+                "pnl_order": range(next_order, next_order + len(missing_accounts)),
+            }),
+        ],
+        ignore_index=True,
+    )
+
+# Thứ tự trình bày P&L: Revenue -> COGS -> opex -> D&A -> dưới EBIT.
+# pnl_order đánh số theo từng TÀI KHOẢN nên không sắp xếp được NHÓM;
+# Power BI cần một cột có đúng một giá trị cho mỗi pnl_group mới dùng
+# được "Sort by column".
+GROUP_ORDER = {
+    "Revenue": 1,
+    "COGS": 2,
+    "Store Opex": 3,
+    "G&A": 4,
+    "D&A": 5,
+    "UNMAPPED": 6,
+    "Below EBIT": 7,
+}
+dim_account["group_order"] = dim_account["pnl_group"].map(GROUP_ORDER)
+
 store_master = pd.read_excel(DATA / "03_Master_Data.xlsx", sheet_name="Store_Master")
 dim_costcenter = store_master.rename(columns={"store_code": "cost_center"})[
     ["cost_center", "store_name", "region", "format", "open_date"]
