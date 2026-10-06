@@ -1,0 +1,51 @@
+{
+  "period": "2026-09",
+  "revenue": {
+    "actual_m": 10506,
+    "budget_m": 10925,
+    "var_m": -419,
+    "var_pct": -3.8
+  },
+  "gross_margin_pct": {
+    "actual": 43.9,
+    "budget": 45.2
+  },
+  "ebit": {
+    "actual_m": 546,
+    "budget_m": 851,
+    "var_m": -306,
+    "var_pct": -35.9
+  },
+  "revenue_bridge": {
+    "volume_effect_m": -393,
+    "price_effect_m": -23
+  },
+  "top_store_misses": [
+    {
+      "store": "ST-01",
+      "var_m": -386
+    },
+    {
+      "store": "ST-11",
+      "var_m": -122
+    },
+    {
+      "store": "ST-09",
+      "var_m": -80
+    }
+  ],
+  "top_store_beats": [
+    {
+      "store": "UNASSIGNED",
+      "var_m": 135
+    },
+    {
+      "store": "ST-06",
+      "var_m": 75
+    },
+    {
+      "store": "ST-03",
+      "var_m": 49
+    }
+  ]
+}
